@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D 5e Character Builder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 { font-size: 2.5em; margin: 0; }
+        .subtitle { font-size: 0.95em; opacity: 0.9; }
+        .header-controls {
+            display: flex;
+            gap: 10px;
+        }
+        .settings-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid white;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            overflow: auto;
+        }
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .source-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .source-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .source-item input {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .source-item label {
+            cursor: pointer;
+            flex: 1;
+            margin: 0;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: #ddd;
+            color: #333;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        .section { display: flex; flex-direction: column; gap: 15px; }
+        .section h2 {
+            color: #333;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+            background: white;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        .ability-scores {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .ability-score {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .ability-score label {
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+        }
+        .ability-score input {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .character-sheet {
+            grid-column: 1 / -1;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 4px;
+            border: 2px solid #667eea;
+        }
+        .character-sheet h2 {
+            margin-top: 0;
+        }
+        .sheet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .sheet-item {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+        }
+        .sheet-label {
+            font-size: 0.8em;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .sheet-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #333;
+        }
+        .sheet-source {
+            font-size: 0.75em;
+            color: #aaa;
+            margin-top: 5px;
+        }
+        button.main-btn {
+            grid-column: 1 / -1;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button.main-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); 
+        }
+        button.main-btn:active { 
+            transform: translateY(0); 
+        }
+        .subclass-container {
+            display: none;
+        }
+        .subclass-container.active {
+            display: block;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .source-badge {
+            display: inline-block;
+            background: #e0e0e0;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>⚔️ D&D 5e Character Builder</h1>
+                <p class="subtitle">Create your next adventurer</p>
+            </div>
+            <div class="header-controls">
+                <button class="settings-btn" onclick="openSourceModal()">⚙️ Source Settings</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="section">
+                <h2>Basic Info</h2>
+                <div>
+                    <label for="charName">Character Name</label>
+                    <input type="text" id="charName" placeholder="Enter character name">
+                </div>
+                <div>
+                    <label for="playerName">Player Name</label>
+                    <input type="text" id="playerName" placeholder="Enter your name">
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Race & Class</h2>
+                <div>
+                    <label for="race">Race</label>
+                    <select id="race">
+                        <option value="">Select a race</option>
+                        <option value="human">Human</option>
+                        <option value="elf">Elf</option>
+                        <option value="dwarf">Dwarf</option>
+                        <option value="halfling">Halfling</option>
+                        <option value="dragonborn">Dragonborn</option>
+                        <option value="gnome">Gnome</option>
+                        <option value="half-elf">Half-Elf</option>
+                        <option value="half-orc">Half-Orc</option>
+                        <option value="tiefling">Tiefling</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="class">Class</label>
+                    <select id="class" onchange="updateSubclasses()">
+                        <option value="">Select a class</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section" id="subclassSection">
+                <h2>Subclass</h2>
+                <div>
+                    <label for="level">Level</label>
+                    <input type="number" id="level" value="1" min="1" max="20" onchange="updateSubclassOptions()">
+                </div>
+                <div class="subclass-container" id="subclassSelector">
+                    <label for="subclass">Subclass</label>
+                    <select id="subclass">
+                        <option value="">None selected</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Ability Scores</h2>
+                <p style="font-size: 0.9em; color: #888; margin-bottom: 10px;">Roll 4d6, drop lowest (or use standard array)</p>
+                <div class="ability-scores">
+                    <div class="ability-score">
+                        <label>Strength</label>
+                        <input type="number" id="str" value="10" min="3" max="20" onchange="updateSummary()">
+                    </div>
+                    <div class="ability-score">
+                        <label>Dexterity</label>
+                        <input type="number" id="dex" value="10" min="3" max="20" onchange="updateSummary()">
+                    </div>
+                    <div class="ability-score">
+                        <label>Constitution</label>
+                        <input type="number" id="con" value="10" min="3" max="20" onchange="updateSummary()">
+                    </div>
+                    <div class="ability-score">
+                        <label>Intelligence</label>
+                        <input type="number" id="int" value="10" min="3" max="20" onchange="updateSummary()">
+                    </div>
+                    <div class="ability-score">
+                        <label>Wisdom</label>
+                        <input type="number" id="wis" value="10" min="3" max="20" onchange="updateSummary()">
+                    </div>
+                    <div class="ability-score">
+                        <label>Charisma</label>
+                        <input type="number" id="cha" value="10" min="3" max="20" onchange="updateSummary()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Other Details</h2>
+                <div>
+                    <label for="background">Background</label>
+                    <input type="text" id="background" placeholder="e.g., Soldier, Sage, Outlander" onchange="updateSummary()">
+                </div>
+                <div>
+                    <label for="alignment">Alignment</label>
+                    <select id="alignment" onchange="updateSummary()">
+                        <option value="">Select alignment</option>
+                        <option value="lg">Lawful Good</option>
+                        <option value="ng">Neutral Good</option>
+                        <option value="cg">Chaotic Good</option>
+                        <option value="ln">Lawful Neutral</option>
+                        <option value="tn">True Neutral</option>
+                        <option value="cn">Chaotic Neutral</option>
+                        <option value="le">Lawful Evil</option>
+                        <option value="ne">Neutral Evil</option>
+                        <option value="ce">Chaotic Evil</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="character-sheet">
+                <h2>Character Summary</h2>
+                <div class="sheet-grid" id="summary">
+                    <div class="sheet-item">
+                        <div class="sheet-label">Character</div>
+                        <div class="sheet-value" id="summaryName">Unnamed</div>
+                    </div>
+                    <div class="sheet-item">
+                        <div class="sheet-label">Class</div>
+                        <div class="sheet-value" id="summaryClass">—</div>
+                        <div class="sheet-source" id="summaryClassSource"></div>
+                    </div>
+                    <div class="sheet-item">
+                        <div class="sheet-label">Subclass</div>
+                        <div class="sheet-value" id="summarySubclass">—</div>
+                        <div class="sheet-source" id="summarySubclassSource"></div>
+                    </div>
+                    <div class="sheet-item">
+                        <div class="sheet-label">Race</div>
+                        <div class="sheet-value" id="summaryRace">—</div>
+                    </div>
+                    <div class="sheet-item">
+                        <div class="sheet-label">Level</div>
+                        <div class="sheet-value" id="summaryLevel">1</div>
+                    </div>
+                    <div class="sheet-item">
+                        <div class="sheet-label">HP</div>
+                        <div class="sheet-value" id="summaryHP">8</div>
+                    </div>
+                    <div class="sheet-item">
+                        <div class="sheet-label">AC</div>
+                        <div class="sheet-value" id="summaryAC">10</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="main-btn" onclick="generateCharacter()">✨ Generate Character</button>
+        </div>
+    </div>
+
+    <!-- Source Settings Modal -->
+    <div id="sourceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSourceModal()">&times;</span>
+            <div class="modal-header">Source Settings</div>
+            <p style="margin-bottom: 15px; color: #666;">Select which sources to include when loading class data:</p>
+            <div class="source-list" id="sourceList"></div>
+            <div class="modal-buttons">
+                <button class="modal-buttons button btn-secondary" onclick="closeSourceModal()">Cancel</button>
+                <button class="modal-buttons button btn-primary" onclick="applySources()">Apply & Reload</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data management
+        const classDataUrls = {
+            'PHB': 'data/class/class-phb.json',
+            'XANATHARS': 'data/class/class-xanathar.json',
+            'TASHA': 'data/class/class-tasha.json',
+        };
+
+        let allClasses = [];
+        let classData = {};
+        let enabledSources = new Set(['PHB', 'XANATHARS', 'TASHA']);
+        const abilityNames = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+        const hitDiceByClass = {
+            'barbarian': 12, 'bard': 8, 'cleric': 8, 'druid': 8,
+            'fighter': 10, 'monk': 8, 'paladin': 10, 'ranger': 10,
+            'rogue': 8, 'sorcerer': 6, 'warlock': 6, 'wizard': 6
+        };
+
+        // Initialize
+        function init() {
+            loadClasses();
+            initializeSourceSettings();
+        }
+
+        function initializeSourceSettings() {
+            const sourceList = document.getElementById('sourceList');
+            sourceList.innerHTML = '';
+            
+            Object.keys(classDataUrls).forEach(source => {
+                const div = document.createElement('div');
+                div.className = 'source-item';
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.id = `source-${source}`;
+                input.checked = enabledSources.has(source);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `source-${source}`;
+                label.textContent = source;
+                
+                div.appendChild(input);
+                div.appendChild(label);
+                sourceList.appendChild(div);
+            });
+        }
+
+        async function loadClasses() {
+            const classSelect = document.getElementById('class');
+            classSelect.innerHTML = '<option value="">Loading classes...</option>';
+            
+            allClasses = [];
+            classData = {};
+            
+            try {
+                for (const [source, url] of Object.entries(classDataUrls)) {
+                    if (!enabledSources.has(source)) continue;
+                    
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) continue;
+                        
+                        const data = await response.json();
+                        if (data.class && Array.isArray(data.class)) {
+                            data.class.forEach(cls => {
+                                const key = cls.name.toLowerCase().replace(/\s+/g, '-');
+                                if (!classData[key]) {
+                                    classData[key] = [];
+                                }
+                                classData[key].push({
+                                    ...cls,
+                                    source: source
+                                });
+                                
+                                if (!allClasses.find(c => c.name === cls.name)) {
+                                    allClasses.push({
+                                        name: cls.name,
+                                        key: key
+                                    });
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.warn(`Could not load ${source}:`, e);
+                    }
+                }
+                
+                // Populate class dropdown
+                classSelect.innerHTML = '<option value="">Select a class</option>';
+                allClasses.sort((a, b) => a.name.localeCompare(b.name)).forEach(cls => {
+                    const option = document.createElement('option');
+                    option.value = cls.key;
+                    option.textContent = cls.name;
+                    classSelect.appendChild(option);
+                });
+                
+                // Fallback to manual options if no data loaded
+                if (allClasses.length === 0) {
+                    const fallbackClasses = [
+                        { name: 'Barbarian', key: 'barbarian' },
+                        { name: 'Bard', key: 'bard' },
+                        { name: 'Cleric', key: 'cleric' },
+                        { name: 'Druid', key: 'druid' },
+                        { name: 'Fighter', key: 'fighter' },
+                        { name: 'Monk', key: 'monk' },
+                        { name: 'Paladin', key: 'paladin' },
+                        { name: 'Ranger', key: 'ranger' },
+                        { name: 'Rogue', key: 'rogue' },
+                        { name: 'Sorcerer', key: 'sorcerer' },
+                        { name: 'Warlock', key: 'warlock' },
+                        { name: 'Wizard', key: 'wizard' }
+                    ];
+                    fallbackClasses.forEach(cls => {
+                        const option = document.createElement('option');
+                        option.value = cls.key;
+                        option.textContent = cls.name;
+                        classSelect.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading classes:', e);
+                classSelect.innerHTML = '<option value="">Error loading classes</option>';
+            }
+        }
+
+        function updateSubclasses() {
+            const classKey = document.getElementById('class').value;
+            const level = parseInt(document.getElementById('level').value);
+            const subclassSelect = document.getElementById('subclass');
+            const subclassContainer = document.getElementById('subclassSelector');
+            
+            subclassSelect.innerHTML = '<option value="">None selected</option>';
+            
+            if (!classKey || !classData[classKey]) {
+                subclassContainer.classList.remove('active');
+                return;
+            }
+            
+            const classes = classData[classKey];
+            let allSubclasses = new Map();
+            
+            classes.forEach(cls => {
+                if (cls.subclasses && Array.isArray(cls.subclasses)) {
+                    cls.subclasses.forEach(sc => {
+                        const key = `${sc.name}|${sc.source}`;
+                        if (!allSubclasses.has(key)) {
+                            allSubclasses.set(key, {
+                                ...sc,
+                                classSource: cls.source
+                            });
+                        }
+                    });
+                }
+            });
+            
+            if (allSubclasses.size > 0) {
+                allSubclasses.forEach((sc, key) => {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = `${sc.name} (${sc.source})`;
+                    subclassSelect.appendChild(option);
+                });
+                subclassContainer.classList.add('active');
+            } else {
+                subclassContainer.classList.remove('active');
+            }
+            
+            updateSummary();
+        }
+
+        function updateSubclassOptions() {
+            const level = parseInt(document.getElementById('level').value);
+            const subclassContainer = document.getElementById('subclassSelector');
+            
+            if (level >= 3 && document.getElementById('class').value) {
+                subclassContainer.style.opacity = '1';
+                subclassContainer.style.pointerEvents = 'auto';
+            } else {
+                subclassContainer.style.opacity = '0.5';
+                subclassContainer.style.pointerEvents = 'none';
+                document.getElementById('subclass').value = '';
+            }
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const classKey = document.getElementById('class').value;
+            const className = classKey ? allClasses.find(c => c.key === classKey)?.name || '' : '';
+            const classSource = classKey && classData[classKey] ? classData[classKey][0].source : '';
+            
+            document.getElementById('summaryName').textContent = document.getElementById('charName').value || 'Unnamed';
+            document.getElementById('summaryClass').textContent = className || '—';
+            document.getElementById('summaryClassSource').textContent = classSource ? `Source: ${classSource}` : '';
+            
+            const subclassValue = document.getElementById('subclass').value;
+            if (subclassValue) {
+                const [subclassName, subclassSource] = subclassValue.split('|');
+                document.getElementById('summarySubclass').textContent = subclassName;
+                document.getElementById('summarySubclassSource').textContent = `Source: ${subclassSource}`;
+            } else {
+                document.getElementById('summarySubclass').textContent = '—';
+                document.getElementById('summarySubclassSource').textContent = '';
+            }
+            
+            document.getElementById('summaryRace').textContent = capitalizeFirstLetter(document.getElementById('race').value) || '—';
+            document.getElementById('summaryLevel').textContent = document.getElementById('level').value;
+            
+            updateHP();
+            updateAC();
+        }
+
+        function updateHP() {
+            const conMod = Math.floor((parseInt(document.getElementById('con').value) - 10) / 2);
+            const level = parseInt(document.getElementById('level').value);
+            const classKey = document.getElementById('class').value;
+            const hitDie = hitDiceByClass[classKey] || 8;
+            const hp = Math.max(1, hitDie + ((level - 1) * ((hitDie / 2) + 1 + conMod)));
+            document.getElementById('summaryHP').textContent = Math.floor(hp);
+        }
+
+        function updateAC() {
+            const dexMod = Math.floor((parseInt(document.getElementById('dex').value) - 10) / 2);
+            const ac = 10 + dexMod;
+            document.getElementById('summaryAC').textContent = ac;
+        }
+
+        function capitalizeFirstLetter(str) {
+            return str ? str.charAt(0).toUpperCase() + str.slice(1).replace(/-/g, ' ') : '';
+        }
+
+        function generateCharacter() {
+            const abilityScores = abilityNames.map(name => {
+                const el = document.getElementById(name);
+                if (!el.value) {
+                    el.value = Math.floor(Math.random() * 8) + 8;
+                }
+                return parseInt(el.value);
+            });
+
+            const charName = document.getElementById('charName').value || generateRandomName();
+            document.getElementById('charName').value = charName;
+
+            updateSummary();
+            const className = capitalizeFirstLetter(document.getElementById('class').value);
+            const raceName = capitalizeFirstLetter(document.getElementById('race').value);
+            alert(`${charName} the ${raceName} ${className} is ready for adventure!`);
+        }
+
+        function generateRandomName() {
+            const firstNames = ['Aragorn', 'Gandalf', 'Gimli', 'Legolas', 'Frodo', 'Bilbo', 'Boromir', 'Denethor', 'Galadriel', 'Elrond'];
+            return firstNames[Math.floor(Math.random() * firstNames.length)];
+        }
+
+        function openSourceModal() {
+            document.getElementById('sourceModal').style.display = 'block';
+        }
+
+        function closeSourceModal() {
+            document.getElementById('sourceModal').style.display = 'none';
+        }
+
+        function applySources() {
+            enabledSources.clear();
+            Object.keys(classDataUrls).forEach(source => {
+                const checkbox = document.getElementById(`source-${source}`);
+                if (checkbox && checkbox.checked) {
+                    enabledSources.add(source);
+                }
+            });
+            localStorage.setItem('enabledSources', JSON.stringify(Array.from(enabledSources)));
+            closeSourceModal();
+            loadClasses();
+            updateSubclasses();
+        }
+
+        // Modal close on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('sourceModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('enabledSources');
+            if (saved) {
+                enabledSources = new Set(JSON.parse(saved));
+            }
+            init();
+        });
+    </script>
+</body>
+</html>
